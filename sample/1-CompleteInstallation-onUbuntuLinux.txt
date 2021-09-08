@@ -1,0 +1,205 @@
+==========================================================================
+Complete CI/CD with GIT+MAVEN+JENKINS+TOMCAT+PACKER+TERRAFORM+AWS
+==========================================================================
+		1. JAVA/JDK         - To run java projects
+
+		2. GIT              - To run git commands - add/commit/push
+
+		3. GITHUB Account   - To store src code
+	   				src-web-app-ion  - git repo to store src code
+	   				pr-web-app-ion   - git repo to store packer build templates
+	   				tf-web-app-ion   - git repo to store terraform templates
+
+		4. Maven           -  To build maven projects
+
+		5. AWS S3          -  To store artifacts (ex .jar/.war)
+
+		6. AWS CLI         -  To run AWS CLI commands
+
+		7. PACKER          -  To build Custom AMI for AWS EC2
+
+		8. Terraform       -  To provision AWS infra resources
+
+		9. JENKINS         -  To automate the complete process[Continuous Integration]
+
+	      				1-maven-web-app-ion         :   To build war packages from src code
+	      				2-packer-web-app-ion        :   To create custom ami and retrieve ami_id
+	      				3-terraform-web-app-ion     :   To provision AWS resources using retrieved ami_id from packer job
+
+		10. TOMCAT         -  To be used as webserver on instances , helps to run .jsp files from java
+
+==========================================================================
+Prerequisites:
+==========================================================================
+	-	An EC2 Instance with latest Ubuntu OS
+	- Security Groups with Port opened for 8080,to run JENKINS (default port 8080)
+	- Git CLI to be installed on Ubuntu to pull the code from GitHub
+	- Java JDK to be installed on Ubuntu instance for running the java code
+	- Maven to be installed on Ubuntu instance for compile/build java-maven project
+	- Jenkins to be installed on Ubuntu instance
+	- In Jenkins, update Home for MAVEN=/usr/local/bin/maven/
+	- Create a user "jenkins" with sudo privilege's
+	- Install AWS CLI and configure aws cli with access Key and secret key for Jenkins User
+	- Packer to be installed on Ubuntu instance for creating customized AMIs
+	- Terraform to be installed on Ubuntu instance for provisioning entire AWS Infrastructure
+	- S3 buckets, to store jar/war artifact from maven builds
+	- An Policy for s3 bucket for public access
+
+==========================================================================
+1) GIT INSTALLATION ON UBUNTU LINUX
+==========================================================================
+	$ sudo su
+	$ cd
+	$ sudo apt-get update -y
+	$ sudo apt-get install git -y
+	$ git --version
+
+==========================================================================
+2) JAVA INSTALLATION on UBUNTU LINUX
+==========================================================================
+	$ sudo su
+	$ cd
+	$ sudo apt-get update -y
+	$ sudo apt install openjdk-11-jdk -y
+	$ java -version
+	$ export JAVA_HOME='/usr/lib/jvm/java-1.11.0-openjdk-amd64'
+
+==========================================================================
+3) MAVEN INSTALLATION on UBUNTU LINUX
+==========================================================================
+	$ sudo su
+	$ cd
+	$ sudo apt-get update -y
+	$ sudo apt-get install unzip -y
+	$ wget https://dlcdn.apache.org/maven/maven-3/3.8.2/binaries/apache-maven-3.8.2-bin.zip
+	$ unzip apache-maven-3.8.2-bin.zip
+	$ mv apache-maven-3.8.2 maven/
+	$ mv maven/ /usr/local/bin/
+	$ export M2_HOME=/usr/local/bin/maven/
+	$ export PATH=$PATH:/usr/local/bin/maven/bin/
+	$ mvn --version
+
+==========================================================================
+4.JENKINS INSTALLATION ON AWS EC2 Ubuntu instances
+==========================================================================
+KeyPages:		https://www.jenkins.io/doc/book/installing/#debianubuntu
+
+	$ wget -q -O - https://pkg.jenkins.io/debian-stable/jenkins.io.key | sudo apt-key add -
+	$ sudo sh -c 'echo deb https://pkg.jenkins.io/debian-stable binary/ > /etc/apt/sources.list.d/jenkins.list'
+	$ sudo apt-get update -y
+	$ sudo apt-get upgrade -y
+	$ sudo apt-get install jenkins -y
+	$ systemctl status jenkins.service
+
+#To retrieve the Initial password
+	$ sudo vi /var/lib/jenkins/secrets/initialAdminPassword
+
+#To add user jenkins with sudo previlages
+	$ vi /etc/sudoers
+	$ jenkins ALL=(ALL) NOPASSWD: ALL
+
+==================================================
+5) AWS CLI Installation
+==================================================
+# Create AWS IAM Credentials (Access Key and Secret Key)
+ https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2-linux.html
+	$ sudo su jenkins
+	$ curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+	$ unzip awscliv2.zip
+	$ sudo ./aws/install
+	$ aws configure
+
+===========================================
+6) PACKER INSTALLATION ON UBUNTU LINUX
+===========================================
+https://learn.hashicorp.com/tutorials/packer/getting-started-install
+	$ sudo su
+	$ cd
+	$ sudo apt-get update -y
+  $ sudo apt-get install wget unzip -y
+	$ sudo wget https://releases.hashicorp.com/packer/1.6.1/packer_1.6.1_linux_amd64.zip
+	$ sudo unzip packer_1.6.0_linux_amd64.zip
+  $ mv packer /usr/local/bin/
+  $ export PATH=$PATH:/usr/local/bin/packer/
+	$ packer -v
+	$ rm -rf pac*
+
+===========================================
+7) TERRAFORM INSTALLATION ON UBUNTU LINUX
+===========================================
+  $ sudo su
+	$ cd
+  $ sudo apt-get update -y
+  $ sudo apt-get install wget unzip -y
+	$ wget https://releases.hashicorp.com/terraform/0.13.1/terraform_0.13.1_linux_amd64.zip
+	$ unzip terraform_0.12.26_linux_amd64.zip
+	$ mv terraform /usr/local/bin/
+  $ export PATH=$PATH:/usr/local/bin/terraform/
+	$ terraform -v
+	$ rm -f terra*
+
+======================================================
+9) AWS s3 buckets to store artifact's from maven build
+======================================================
+#S3 bucket policy to be attached for s3 for public access
+{
+    "Version": "2012-10-17",
+    "Id": "Policy1630566905636",
+    "Statement": [
+        {
+            "Sid": "Stmt1630566903788",
+            "Effect": "Allow",
+            "Principal": "*",
+            "Action": "s3:*",
+            "Resource": "arn:aws:s3:::app-ion-dev-bucket-us-east-2/*"
+        }
+    ]
+}
+=========================================================================================
+10) GITHUB Code Packer Repo to install TOMCAT8 INSTALLATION ON UBUNTU LINUX
+=========================================================================================
+				#!/bin/bash
+				sudo su
+				cd
+				sudo apt-get update && sudo apt-get upgrade -y
+				sudo apt-get install libtomcat9-java -y
+				sudo apt-get update -y
+				sudo apt-get install tomcat9-admin tomcat9-common -y
+				sudo apt-get install tomcat9 -y
+				cd /var/lib/tomcat9/webapps/
+				sudo wget https://app-ion-dev-bucket-us-east-2.s3.us-east-2.amazonaws.com/ion.war
+				sudo systemctl start tomcat9
+
+
+========================================================================================
+11) Maven Code to be used in Jenkins and WebHook Integration with GITHUB
+========================================================================================
+11.1. Move to GITHUB repo --> settings --> WebHook
+11.2. Add webhook and use payload URL
+		 http://<Public-DNS Name for Jenkins Server>:8080/github-webhook/
+11.3. Move to Jenkins and select under "Build Triggers"--> "GitHub hook trigger for GITScm polling"
+11.4. Move to Jenkins maven build job and run the following code under "Execute shell Command"
+
+		$ cd /var/lib/jenkins/workspace/1-maven-web-app-ion/target/
+		$ aws s3 cp ion-webapp.war s3://app-ion-dev-bucket-us-east-2/ion.war
+
+========================================================================================
+12) Packer Code to be used in Jenkins
+========================================================================================
+		artifact_id=`packer build -machine-readable buildAMI.json |awk -F, '$0 ~/artifact,0,id/ {print $6}'`
+		ami_id=`echo $artifact_id | cut -d ':' -f2`
+		echo 'variable "ami" { default = "'${ami_id}'" }' > ion_ami_id.tf
+		aws s3 cp ion_ami_id.tf s3://app-ion-dev-bucket-us-east-2/ion_ami_id.tf
+
+========================================================================================
+13) Terraform Code trigger Infrastructure Creation - to be used in Jenkins
+========================================================================================
+		rm -rf ion_ami_id.tf
+		terraform init
+		sudo wget https://app-ion-dev-bucket-us-east-2.s3.us-east-2.amazonaws.com/ion_ami_id.tf
+		terraform apply -input=false -auto-approve
+========================================================================================
+14) Terraform Code to destroy Infrastructure - to be used in Jenkins
+========================================================================================
+		terraform destroy --auto-approve
+		rm -rf ion_ami_id.tf

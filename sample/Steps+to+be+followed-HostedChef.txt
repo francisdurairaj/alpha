@@ -1,0 +1,83 @@
+===============================================================================================================
+Scenario              :   Using Hosted Chef, learn how to manage Ubuntu EC2 Node Instances (AWS EC2 Instances)
+================================================================================================================
+  - Chef Server	      :  	Hosted Chef
+  - Chef Workstation  : 	AWS EC2 Ubuntu Instance
+  - Chef Nodes	      :   AWS EC2 Ubuntu Instances [ Web - Apache, App - PHP , DB - MySql]
+
+========================================================================================================
+Steps for Chef Tutorials
+========================================================================================================
+-----------------#Create an Hosted Chef-Server----------------------------------
+
+1.  Create an Hosted Chef account, and download the starter Kit
+    URL : https://manage.chef.io
+
+2.  Download from hosted chef-> "Administration --> Organizations --> Starter Kit---> Chef-starter.zip"
+
+3.1  Unzip the Chef-starter.zip, and move to chef-repo, and run command $git init to make a GIT repo
+    #Note: Please remove .gitignore file
+
+3.2  Clone "chef-repo" to GITHUB account from your local computer
+
+-----------------#Configure Chef-Workstation over an EC2 Instance-----------------
+4.  Create 4 AWS EC2 Instances - 1 Chef-Workstation + 1-WebServer , 1-AppServer, 1-DBServer with userdata
+            #!/bin/bash
+            sudo su
+            cd
+            sudo apt-get update -y
+
+5.  Connect to Chef-Workstation EC2 Instance
+
+6.  Download the ChefDK(chef client-https://downloads.chef.io/chefdk/3.0.36) to Chef-Workstation
+      $ wget https://packages.chef.io/files/stable/chef-workstation/20.12.205/ubuntu/20.04/chef-workstation_20.12.205-1_amd64.deb
+	    $ dpkg -i chef-workstation_20.12.205-1_amd64.deb
+      $ rm -rf chef-workstation_20.12.205-1_amd64.deb
+
+7.  Run Command to verify chef version
+  	  $ chef --version
+      $ knife --version
+
+8.	Please use the following commands over ChefDK workstation
+      $ sudo su
+      $ cd
+      $ git clone https://github.com/ssadcloud/chef-repo.git
+      $ cd chef-repo
+      $ cd .chef
+      $ pwd
+
+8.1.  ## Create a copy of KeyPair used to connect for EC2 Nodes under the path /root/chef-repo/.chef ##
+      $ vi "KeyPair-Ohio.pem"
+      $ < Copy the KeyPair.pem files that shall be used for EC2 launch>
+      $ < chmod 400 KeyPair.pem>
+
+8.2.  ## Create a copy of client_Key.pem if isn't avaialble in  /root/chef-repo/.chef ##
+      $ vi "<client_Key>.pem"
+      $ < Copy the content of /chef-repo/.chef/<client_Key.pem> from local computer >
+
+9.  Move to web folder, and write a sample recipe (currently to launch apache2 over Ubuntu)
+     $ cd /root/chef-repo/
+     $ chef generate cookbook cookbooks/web
+     $ cd /root/chef-repo/cookbooks/web/recipes
+
+10. Write  cookbooks named as <apache.rb> && <php.rb>>
+     $ nano <apache-cb.rb>
+      <<!! Add the contents of apache.rb>>
+
+     $ nano <php-cb.rb>
+     <<!! Add the contents of php.rb>>
+
+11.  Upload the created cookbook to Chef-Server
+     $ cd /root/chef-repo/
+     $ knife upload cookbook <cook-book-name>
+
+     Ex: $ knife upload cookbook web      		//adds web cookbook to chef-server
+
+12.  Bootstrap a node to add to Chef-Server##
+      Syntax:
+  	   knife bootstrap <Public IP-ADDRESS> --connection-user USER --sudo --ssh-identity-file <Path to Instance KeyPair> --node-name node1 --run-list 'recipe[COOKBOOK_NAME]'
+     Ex:
+      $ knife bootstrap 34.211.131.112 --connection-user ubuntu --sudo --ssh-identity-file  /root/chef-repo/KeyPair-Ohio.pem --node-name ChefNode-01 --run-list 'recipe[web::apache]'
+
+13. For Deletion of Cookbooks
+	  $ knife delete -r cookbooks/web

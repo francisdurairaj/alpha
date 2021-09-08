@@ -1,0 +1,13 @@
+---
+- hosts: <name of the webservers>
+  tasks:
+    - name: Installs apache on Web servers
+      apt: pkg=apache2 state=present update_cache=true
+      notify:
+        - start apache2
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+
+  handlers:
+    - name: start apache2
+      service: name=apache2 state=started

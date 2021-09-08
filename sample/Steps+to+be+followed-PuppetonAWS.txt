@@ -1,0 +1,76 @@
+===============================================================================================
+What is Puppet?
+===============================================================================================
+Introduction:
+    - Puppet is produced by Puppet Labs
+    - Deployed in a simple client-server model
+    - Open-source, Automation Tool
+    - AWS exposes a powerful API for creating and managing its infrastructure as a service platform.
+    - The aws module allows you to drive that API using Puppet code.
+    - In the simplest case, this allows you to create new EC2 instances from Puppet code.
+    - It allows you to describe your entire AWS infrastructure and to model the relationships between different components
+    - This module now includes tasks which will facilitate in installing the module dependencies
+    - This tool is available on Linux, Unix, and Windows
+===============================================================================================
+Pre-Requisites:
+===============================================================================================
+    1.  AWS EC2 Instances with Ubuntu 20.04 release
+    2.  Recommended configuration, t2.small ( 2 vCPU, 8 GB of RAM)
+    3.  Allow port 8140 for "CUSTOM TCP RULE" for existing Security Group
+===============================================================================================
+Steps to be followed
+===============================================================================================
+  1. Create EC2 Instance and name it as Puppet Master
+
+  2. Allow port 8140 for "CUSTOM TCP RULE" for existing Security Group
+
+  3. Before you begin
+     3.1. Identify the URL of the package you want to enable based on your operating system and version.
+     3.2. *nix platform packages are located in a Puppet.com repository corresponding to the package management system.
+     3.3. https://puppet.com/docs/puppet/7.5/install_puppet.html#enable_the_puppet_platform_repository
+
+  4. Software Packages Required
+          https://puppet.com/docs/puppet/7.5/server/install_from_packages.html
+
+  5. SSH into PuppetMaster EC2 instance and run the following commands using <keypair.pem>
+      $ sudo su
+      $ cd
+      $ sudo apt-get update -y
+      $ sudo apt-get install wget -y
+      $ wget https://apt.puppetlabs.com/puppet7-release-focal.deb
+      $ sudo dpkg -i puppet7-release-focal.deb
+      $ sudo apt update -y
+      $ sudo apt-get install puppetserver -y
+      $ export PATH=$PATH:/opt/puppetlabs/bin/
+      $ sudo systemctl start puppetserver
+      $ puppetserver -v
+      $ puppet -v
+
+  6.Install AWS Modules
+      https://forge.puppet.com/modules/puppetlabs/aws#installing-the-aws-module
+      $ /opt/puppetlabs/puppet/bin/gem install aws-sdk retries
+	  $ curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+	  $ unzip awscliv2.zip
+	  $ sudo ./aws/install
+	  $ aws configure
+          ACCESS_KEY_ID=your_access_key_id
+          SECRET_ACCESS_KEY=your_secret_access_key
+          REGION=ap-south-1
+		  OUTPUT=json
+	  $ sudo /opt/puppetlabs/bin/puppet resource ec2_instance
+	     Should list all instances in your account,it means aws-sdk is working with Puppet
+		 if not then run the below command
+	  $ puppet module install puppetlabs-aws --force
+	  $ cd /opt/puppetlabs/puppet/modules/
+	  $ sudo mkdir puppet-aws-deployments
+	  $ cd puppet-aws-deployments
+      $ sudo nano aws-infra-create.pp
+	    # Copy of the contents of aws-infra-create
+	  $ sudo nano aws-infra-destroy.pp
+	    # Copy of the contents of aws-infra-create
+
+  7.  To create infrastack,any of these resources, set ensure => present.
+      $ puppet apply aws-infra-create.pp --test
+
+  8.  To destroy any of these resources, set ensure => absent.
+      $ puppet apply aws-infra-destroy.pp --test

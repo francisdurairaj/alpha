@@ -1,0 +1,7 @@
+---
+- hosts: <name of the appservers>
+  tasks:
+    - name: Installs PHP on App servers
+      apt: pkg=php state=present
+  vars:
+    ansible_python_interpreter: /usr/bin/python3

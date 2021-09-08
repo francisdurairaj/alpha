@@ -1,0 +1,101 @@
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+SCENARIO-Ansible on AWS with Ubuntu OS
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Setup Process---Software Packages Required
+a.AWS EC2 Instances (2 Nodes, 1 Master)
+b.Ubuntu to be used and python to be installed on Nodes
+
+Keypages:
+http://www.techrepublic.com/article/how-to-install-ansible-on-ubuntu/
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+STEPS
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Instance Type     Instance Name				      Public IP			  Private Master
+Master            Master
+WebServer         Node01-WebServer
+AppServer         Node02-AppServer
+DBServer	  			Node03-DBServer
+
+1.Create 3 EC2 Instances - 1 Master ,1 WebServers[Ubuntu], 1 AppServer & 1 DBServer using <keypair.pem> and Ubuntu AMI, required to launch the EC2 Instances using
+following scripts
+
+			#!/bin/bash
+			sudo su
+			cd
+			sudo apt-get update -y
+			sudo apt-get upgrade -y
+			sudo apt-get install python python3.0 python3-pip -y
+			sudo apt-get install build-essential libssl-dev libffi-dev python-dev -y
+
+2.Firstly, name them as Ansible-Master||WebServer and AppServer ,DBServer respectively
+
+3.SSH into Ansible-Master EC2 instance and run the following commands using <keypair.pem>
+  	$ sudo su
+  	$ cd
+  	$ sudo apt-get update -y
+  	$ sudo apt-get install ansible -y
+  	$ ansible --version
+
+4. Verify the connection with WebServer-Node1 using SSH and private ip
+    $ ssh -i "TestKeyPair-Org.pem" ubuntu@<private-ip for WebServer-Node01>
+  <! We will get access denied since TestKeyPair-Org.pem is not available on Master Node>
+
+5. Create a Copy of KeyPair on Master Node
+    $ sudo nano TestKeyPair-Org.pem
+        <! Create a copy of Keypair using the contents of keypair>
+    $ chmod 400 TestKeyPair-Org.pem
+    $ ssh -i "TestKeyPair-Org.pem" ubuntu@<private-ip for WebServer-Node01>
+        <! Verify secure connection with WebServer-01>
+    $ logout
+        <! This logout command make to logout from Webserver-Node01>
+        <!Back on the Master>
+    $ ssh-keygen -t rsa -b 4096
+        <! Creates a new key id_rsa && id_rsa.pub to be used for passwordless login to machines>
+    $ cd .ssh/
+    $ vi id_rsa.pub
+        <! Open the id_rsa.pub ,copy the content and paste it to authorized_keys for Webserver Node-01
+    $ ssh -i "TestKeyPair-Org.pem" ec2-user@<private-ip>
+        <! for secure connection with WebServer-01#
+    $ sudo nano .ssh/authorized_keys
+        <!copy the content of id_rsa.pub to authorized_keys>
+    $ sudo apt-get update -y
+    $ sudo apt-get install python
+    $ exit
+    $ logout
+
+###On Master node ,please run the following.Now we're going to copy the ssh key to all the necessary servers you'll want Ansible to manage.
+###Say, for instance, you have a server at IP address 192.168.1.162.
+###Copy the ssh key to that server with the command, where user is the same user found in the email address used above:
+###You'll be prompted to okay the connection with the server and enter the password for the remote user.
+###You can now test your ssh key connection by issuing the command (from the Ansible server), where user is the user from the earlier email.
+###Once you've done that, you're ready to configure Ansible.
+###Upon successful connection, exit from the ssh connection with the command exit.
+###You should not be prompted for a password, and the connection will be made.
+
+6.
+  Running the ansible commands on Master Server######
+  $ cd /etc/ansible
+  $ sudo cp ansible.cfg ansible.cfg.original
+  $ sudo cp hosts hosts.original
+  $ sudo nano hosts
+  <!
+  <name of the group (ex: webservers)
+  <Private-IPs>
+  !>
+  ##### edit the contents of ansible.cfg
+  $ ansible -m ping all
+  $ ansible -m ping webserver
+  $ sudo nano /etc/ansible/ansible.cfg
+  <!
+  ###For Ansible Config
+  1.sudo_user = root
+  2.remote-user = root
+  !>
+  $ sudo nano /etc/ansible/hosts
+  <List all the servers>
+  $ansible -m ping all
+
+7.
+  Running of a sample playbook
+    $ ansible-playbook -s apache-rb.yml
