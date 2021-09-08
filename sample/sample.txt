@@ -1,1 +1,7 @@
 testing
+[1:19 PM] Kumar-Trainer (Guest)
+https://app-ion-dev-bucket-us-east-2.s3.us-east-2.amazonaws.com/AWS+AND+DEVOPS-Elasticsearch%2BLogstash%2BKibana.mp4
+
+[1:20 PM] Kumar-Trainer (Guest)
+https://app-ion-dev-bucket-us-east-2.s3.us-east-2.amazonaws.com/AWS+and+DevOps-Monioting+Tool-Nagios.mp4
+
